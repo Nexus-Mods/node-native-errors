@@ -1,0 +1,17 @@
+{
+  "name": "native-errors",
+  "version": "0.0.1",
+  "description": "Make the original error code available in addition to the libuv translated one.",
+  "main": "index.js",
+  "scripts": {
+    "detours": "node build_detours.js",
+    "install": "npm run detours && autogypi && node-gyp configure build"
+  },
+  "author": "Black Tree Gaming Ltd",
+  "license": "GPL-3.0",
+  "dependencies": {
+    "autogypi": "^0.2.2",
+    "nan": "^2.14.0",
+    "node-gyp": "^5.0.0"
+  }
+}

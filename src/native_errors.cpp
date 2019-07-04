@@ -37,7 +37,7 @@ static std::wstring strerror(DWORD errorno) {
 }
 
 int &lastErr() {
-  static thread_local int lastErr = 0;
+  static int lastErr = 0;
 
   return lastErr;
 }
@@ -51,8 +51,11 @@ typedef int (WINAPI *ErrTranslateFunc)(int);
 static ErrTranslateFunc uv_translate_sys_error_real;
 
 int WINAPI uv_translate_sys_error_hook(int sys_errno) {
-  setLastSysError(sys_errno);
-  return uv_translate_sys_error_real(sys_errno);
+  int res = uv_translate_sys_error_real(sys_errno);
+  if (res == -4094) {
+    setLastSysError(sys_errno);
+  }
+  return res;
 }
 
 NAN_METHOD(InitHook) {

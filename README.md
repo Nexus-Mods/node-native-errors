@@ -4,9 +4,11 @@ This is a workaround to the problem that libuv maps windows error codes onto cor
 
 # How it works
 
-Microsoft Detours is used to hook into uv_translate_sys_error and store away the incoming error in a thread-local variable that can then be fetched through another function.
+Microsoft Detours is used to hook into uv_translate_sys_error and store any error that maps to UV_UNKNOWN in a variable that can then be fetched through another function.
 
-This is very crude and may be error prone because the client code is still responsible to call GetLastError before any asynchronous operation can produce a new error.
+This is very crude. At least on electron the thread running the api call is not the same that reports errors on the javascript side so with no way to inject the error into the error on the C side it's impossible to reliably assign the native code to the error that gets reported.
+
+Due to this we can't currently rely on the code being correct, it just points out some system error that mapped to unknown that happened recently.
 
 # Supported OSes
 

@@ -1,10 +1,10 @@
 {
   "name": "native-errors",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Make the original error code available in addition to the libuv translated one.",
   "main": "index.js",
   "scripts": {
-    "checkout_detours": "git clone --recurse-submodules -j8 https://github.com/Microsoft/Detours || echo \"usvfs already cloned\"",
+    "checkout_detours": "git clone --recurse-submodules -j8 https://github.com/Microsoft/Detours || echo \"detours already cloned\"",
     "detours": "npm run checkout_detours && node build_detours.js",
     "install": "npm run detours && autogypi && node-gyp configure build"
   },

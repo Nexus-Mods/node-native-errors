@@ -44,16 +44,22 @@ function runVCVars(exe, cb) {
 }
 
 function vcvars(cb) {
-  const {vsInstallDir} = process.env;
+  const {vsInstallDir, VS140COMNTOOLS} = process.env;
   let vcvarsPath
   try {
     const candidate = path.join(vsInstallDir, 'VC', 'Auxiliary', 'Build', 'vcvars64.bat');
     fs.statSync(candidate);
     vcvarsPath = candidate;
   } catch (err) {
-    console.error('installed visual studio version isn\'t supported, please update build_detours.js or install VS 2017', err);
-    cb(err);
-    return;
+    try {
+      const candidate = path.resolve(VS140COMNTOOLS, '..', '..', 'VC', 'bin', 'amd64', 'vcvars64.bat');
+      fs.statSync(candidate);
+      vcvarsPath = candidate;
+    } catch (err) {
+      console.error('installed visual studio version isn\'t supported, please update build_detours.js or install VS 2017', err);
+      cb(err);
+      return;
+    }
   }
   runVCVars(vcvarsPath, cb);
 }

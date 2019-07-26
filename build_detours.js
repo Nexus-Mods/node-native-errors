@@ -7,8 +7,8 @@ function processVCVarsOutput(output) {
   lines
     .filter(line => line.indexOf('=') !== -1)
     .forEach(line => {
-      const [key, value] = line.split('=', 2);
-      process.env[key] = value;
+      const [key, ...value] = line.split('=');
+      process.env[key] = value.join(' ');
     });
 }
 
@@ -44,8 +44,16 @@ function runVCVars(exe, cb) {
 }
 
 function vcvars(cb) {
-  const {vsInstallDir, VS140COMNTOOLS} = process.env;
-  let vcvarsPath
+  let {vsInstallDir, VS140COMNTOOLS} = process.env;
+
+  if (vsInstallDir === undefined) {
+    vsInstallDir = path.join(process.env['ProgramFiles(x86)'], 'Microsoft Visual Studio', '2017', 'Community');
+  }
+  if (VS140COMNTOOLS === undefined) {
+    VS140COMNTOOLS = path.join(process.env['ProgramFiles(x86)'], 'Microsoft Visual Studio 14.0', 'Common7', 'Tools');
+  }
+
+  let vcvarsPath;
   try {
     const candidate = path.join(vsInstallDir, 'VC', 'Auxiliary', 'Build', 'vcvars64.bat');
     fs.statSync(candidate);

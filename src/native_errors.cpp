@@ -74,13 +74,15 @@ NAN_METHOD(InitHook) {
 }
 
 NAN_METHOD(GetLastError) {
+  Local<Context> context = Nan::GetCurrentContext();
+
   int errCode = lastErr();
   std::wstring errStr = strerror(static_cast<DWORD>(errCode));
   std::string err = toMB(errStr.c_str(), CodePage::UTF8, errStr.size());
 
   Local<Object> res = Nan::New<Object>();
-  res->Set("code"_n, Nan::New(errCode));
-  res->Set("message"_n, Nan::New(err.c_str()).ToLocalChecked());
+  res->Set(context, "code"_n, Nan::New(errCode));
+  res->Set(context, "message"_n, Nan::New(err.c_str()).ToLocalChecked());
   info.GetReturnValue().Set(res);
 }
 

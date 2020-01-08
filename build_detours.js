@@ -43,33 +43,66 @@ function runVCVars(exe, cb) {
   });
 }
 
-function vcvars(cb) {
-  let {vsInstallDir, VS140COMNTOOLS} = process.env;
-
-  if (vsInstallDir === undefined) {
-    vsInstallDir = path.join(process.env['ProgramFiles(x86)'], 'Microsoft Visual Studio', '2017', 'Community');
-  }
-  if (VS140COMNTOOLS === undefined) {
-    VS140COMNTOOLS = path.join(process.env['ProgramFiles(x86)'], 'Microsoft Visual Studio 14.0', 'Common7', 'Tools');
-  }
-
-  let vcvarsPath;
-  try {
-    const candidate = path.join(vsInstallDir, 'VC', 'Auxiliary', 'Build', 'vcvars64.bat');
-    fs.statSync(candidate);
-    vcvarsPath = candidate;
-  } catch (err) {
+function testDirsForVcvars64Bat(dirs) {
+  let lastError;
+  for (const dir of dirs) {
     try {
-      const candidate = path.resolve(VS140COMNTOOLS, '..', '..', 'VC', 'bin', 'amd64', 'vcvars64.bat');
+      const candidate = path.join(dir, "vcvars64.bat");
       fs.statSync(candidate);
-      vcvarsPath = candidate;
+      return candidate;
     } catch (err) {
-      console.error('installed visual studio version isn\'t supported, please update build_detours.js or install VS 2017', err);
-      cb(err);
-      return;
+      lastError = err;
     }
   }
-  runVCVars(vcvarsPath, cb);
+  if (lastError !== undefined) {
+    throw lastError;
+  }
+}
+
+function vcvars(cb) {
+  // search locations: VS 2017 Community Edition, VS 2017 Build Tools and VS 14
+  const {
+    vsInstallDir = path.join(
+      process.env["ProgramFiles(x86)"],
+      "Microsoft Visual Studio",
+      "2017",
+      "Community",
+      "VC",
+      "Auxiliary",
+      "Build"
+    ),
+    VSBUILDTOOLSDIR = path.join(
+      process.env["ProgramFiles(x86)"],
+      "Microsoft Visual Studio",
+      "2017",
+      "BuildTools",
+      "VC",
+      "Auxiliary",
+      "Build"
+    ),
+    VS140COMNTOOLS = path.join(
+      process.env["ProgramFiles(x86)"],
+      "Microsoft Visual Studio 14.0",
+      "VC",
+      "bin",
+      "amd64"
+    )
+  } = process.env;
+
+  try {
+    const vsvarsPath = testDirsForVcvars64Bat([
+      vsInstallDir,
+      VSBUILDTOOLSDIR,
+      VS140COMNTOOLS
+    ]);
+    runVCVars(vsvarsPath, cb);
+  } catch (err) {
+    console.error(
+      "installed visual studio version isn't supported, please update build_detours.js or install VS 2017",
+      err
+    );
+    cb(err);
+  }
 }
 
 vcvars(err => {

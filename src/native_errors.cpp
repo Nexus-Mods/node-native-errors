@@ -93,4 +93,8 @@ NAN_MODULE_INIT(Init) {
     GetFunction(New<FunctionTemplate>(GetLastError)).ToLocalChecked());
 }
 
+#if NODE_MAJOR_VERSION >= 10
+NAN_MODULE_WORKER_ENABLED(nativeerrors, Init)
+#else
 NODE_MODULE(nativeerrors, Init)
+#endif

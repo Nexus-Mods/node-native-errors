@@ -1,6 +1,6 @@
 {
   "name": "native-errors",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "Make the original error code available in addition to the libuv translated one.",
   "main": "index.js",
   "scripts": {

@@ -1,3 +1,4 @@
+const path = require('path');
 const util = require('util');
 const cp = require('child_process');
 
@@ -33,9 +34,12 @@ async function main() {
     }
   }
 
+  const binPath = path.join(__dirname, 'node_modules', '.bin');
+  const exeExt = process.platform === 'win32' ? '.cmd' : '';
+
   await spawn('node', ['build_detours.js']);
-  await spawn('autogypi', []);
-  await spawn('node-gyp', ['configure', 'build']);
+  await spawn(path.join(binPath, 'autogypi' + exeExt), []);
+  await spawn(path.join(binPath, 'node-gyp' + exeExt), ['configure', 'build']);
   return 0;
 }
 

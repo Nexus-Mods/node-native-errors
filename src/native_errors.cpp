@@ -1,16 +1,10 @@
 #define NOMINMAX
-#include <nan.h>
+#include <napi.h>
 #include <iostream>
+#include <Windows.h>
 #include <detours.h>
 #include "string_cast.h"
 
-using namespace Nan;
-using namespace v8;
-
-
-Local<String> operator "" _n(const char *input, size_t) {
-  return Nan::New(input).ToLocalChecked();
-}
 
 static std::wstring strerror(DWORD errorno) {
   wchar_t *errmsg = nullptr;
@@ -58,9 +52,7 @@ int WINAPI uv_translate_sys_error_hook(int sys_errno) {
   return res;
 }
 
-NAN_METHOD(InitHook) {
-  Isolate *isolate = Isolate::GetCurrent();
-
+Napi::Value InitHook(const Napi::CallbackInfo &info) {
   uv_translate_sys_error_real = reinterpret_cast<ErrTranslateFunc>(::GetProcAddress(nullptr, "uv_translate_sys_error"));
 
   DetourTransactionBegin();
@@ -69,32 +61,26 @@ NAN_METHOD(InitHook) {
   LONG error = DetourTransactionCommit();
 
   if (error != NO_ERROR) {
-    isolate->ThrowException(Exception::Error("failed to insert hooks"_n));
+    throw Napi::Error(info.Env(), Napi::String::New(info.Env(), "failed to insert hooks"));
   }
+  return info.Env().Undefined();
 }
 
-NAN_METHOD(GetLastError) {
-  Local<Context> context = Nan::GetCurrentContext();
-
+Napi::Value GetLastErrorNapi(const Napi::CallbackInfo &info) {
   int errCode = lastErr();
   std::wstring errStr = strerror(static_cast<DWORD>(errCode));
   std::string err = toMB(errStr.c_str(), CodePage::UTF8, errStr.size());
 
-  Local<Object> res = Nan::New<Object>();
-  res->Set(context, "code"_n, Nan::New(errCode));
-  res->Set(context, "message"_n, Nan::New(err.c_str()).ToLocalChecked());
-  info.GetReturnValue().Set(res);
+  Napi::Object res = Napi::Object::New(info.Env());
+  res.Set("code", errCode);
+  res.Set("message", Napi::String::New(info.Env(), err));
+  return res;
 }
 
-NAN_MODULE_INIT(Init) {
-  Nan::Set(target, "InitHook"_n,
-    GetFunction(New<FunctionTemplate>(InitHook)).ToLocalChecked());
-  Nan::Set(target, "GetLastError"_n,
-    GetFunction(New<FunctionTemplate>(GetLastError)).ToLocalChecked());
+Napi::Object InitAll(Napi::Env env, Napi::Object exports) {
+  exports.Set("InitHook", Napi::Function::New(env, InitHook));
+  exports.Set("GetLastError", Napi::Function::New(env, GetLastErrorNapi));
+  return exports;
 }
 
-#if NODE_MAJOR_VERSION >= 10
-NAN_MODULE_WORKER_ENABLED(nativeerrors, Init)
-#else
-NODE_MODULE(nativeerrors, Init)
-#endif
+NODE_API_MODULE(NativeErrors, InitAll)

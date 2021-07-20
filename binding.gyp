@@ -13,8 +13,11 @@
                 }]
             ],
             "include_dirs" : [
-                "<!(node -e \"require('nan')\")",
+                "<!(node -p \"require('node-addon-api').include_dir\")",
                 "<(module_root_dir)/detours/include"
+            ],
+            "dependencies": [
+              "<!(node -p \"require('node-addon-api').gyp\")"
             ],
             "libraries": [
               "<(module_root_dir)/detours/lib.X64/detours.lib"

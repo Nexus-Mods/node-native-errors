@@ -45,31 +45,37 @@ function runVCVars(exe, cb) {
 
 function vcvars(cb) {
   let {vsInstallDir, VS140COMNTOOLS} = process.env;
-
-  if (vsInstallDir === undefined) {
-    vsInstallDir = path.join(process.env['ProgramFiles(x86)'], 'Microsoft Visual Studio', '2017', 'Community');
+  let candidates = [
+    path.join(process.env['ProgramFiles(x86)'], 'Microsoft Visual Studio', '2017', 'BuildTools','VC', 'Auxiliary', 'Build', 'vcvars64.bat'),
+    path.join(process.env['ProgramFiles(x86)'], 'Microsoft Visual Studio', '2017', 'Community','VC', 'Auxiliary', 'Build', 'vcvars64.bat'),
+    path.join(process.env['ProgramFiles(x86)'], 'Microsoft Visual Studio', '2017', 'Enterprise','VC', 'Auxiliary', 'Build', 'vcvars64.bat'),
+    path.join(process.env['ProgramFiles(x86)'], 'Microsoft Visual Studio', '2017', 'Professional','VC', 'Auxiliary', 'Build', 'vcvars64.bat'),
+    path.join(process.env['ProgramFiles(x86)'], 'Microsoft Visual Studio 14.0',  'VC', 'bin', 'amd64', 'vcvars64.bat')
+  ]
+  if (VS140COMNTOOLS !== undefined) {
+    candidates.unshift(path.resolve(VS140COMNTOOLS, '..', '..', 'VC', 'bin', 'amd64', 'vcvars64.bat'));
   }
-  if (VS140COMNTOOLS === undefined) {
-    VS140COMNTOOLS = path.join(process.env['ProgramFiles(x86)'], 'Microsoft Visual Studio 14.0', 'Common7', 'Tools');
+  if (vsInstallDir !== undefined) {
+    candidates.unshift(path.join(vsInstallDir,'VC', 'Auxiliary', 'Build', 'vcvars64.bat'));
   }
 
-  let vcvarsPath;
-  try {
-    const candidate = path.join(vsInstallDir, 'VC', 'Auxiliary', 'Build', 'vcvars64.bat');
-    fs.statSync(candidate);
-    vcvarsPath = candidate;
-  } catch (err) {
+  let vcvarsPaths = [];
+
+  for (const candidate of candidates) {
     try {
-      const candidate = path.resolve(VS140COMNTOOLS, '..', '..', 'VC', 'bin', 'amd64', 'vcvars64.bat');
       fs.statSync(candidate);
-      vcvarsPath = candidate;
-    } catch (err) {
-      console.error('installed visual studio version isn\'t supported, please update build_detours.js or install VS 2017', err);
-      cb(err);
-      return;
-    }
+      vcvarsPaths.push(candidate);
+    } catch { } // Node 10 syntax
   }
-  runVCVars(vcvarsPath, cb);
+  if (vcvarsPaths.length == 0) {
+    cb('Could not find a suitable version of visual studio ' +
+    'installed.  Please set \n$Env:vsInstallDir, $Env:VS140COMNTOOLS, or ' + 
+    'install a supported version.  Checked\n the following locations:\n\t' +
+    candidates.join('\n\t'));
+    return;
+  }
+
+  runVCVars(vcvarsPaths.shift(), cb);
 }
 
 vcvars(err => {

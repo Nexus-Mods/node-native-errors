@@ -5,3 +5,5 @@ auto.gypi
 auto-top.gypi
 
 Detours
+.prebuildrc  
+prebuilds  
